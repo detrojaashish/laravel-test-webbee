@@ -8,6 +8,7 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 
 class EventsController extends BaseController
 {
@@ -176,6 +177,9 @@ class EventsController extends BaseController
      */
 
     public function getFutureEventsWithWorkshops() {
-        throw new \Exception('implement in coding task 2');
+        return Event::with('workshops')
+            ->select(['events.*', DB::raw('(SELECT MIN(START) FROM workshops WHERE event_id = events.id) AS workshop_min_start')])
+            ->havingRaw('workshop_min_start >= ?', [now()])
+            ->get();
     }
 }
