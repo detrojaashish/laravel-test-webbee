@@ -4,8 +4,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
 
 class MenuController extends BaseController
 {
@@ -96,10 +96,22 @@ class MenuController extends BaseController
      */
 
     public function getMenuItems() {
-        $allMenuItems = MenuItem::leftJoin('menu_items as parent_menu_items', 'parent_menu_items.id', 'menu_items.parent_id')->get();
+        return $this->reformatItems(MenuItem::all());
+    }
 
-        return $allMenuItems->groupBy(function ($item) {
-            return $item['parent_id'];
-        });
+    private function reformatItems(Collection $allMenuItems, $parent = null)
+    {
+        $formattedMenuItems = [];
+
+        foreach ($allMenuItems as $menuItem) {
+            // Check if the current item is a child of the given parent
+            if ($menuItem->parent_id === $parent) {
+                $children = $this->reformatItems($allMenuItems, $menuItem->id);
+                $menuItem['children'] = $children;
+                array_push($formattedMenuItems, $menuItem);
+            }
+        }
+
+        return $formattedMenuItems;
     }
 }
